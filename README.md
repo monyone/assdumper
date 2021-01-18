@@ -1,6 +1,6 @@
 # assdumper
 
-TS 内のAプロファイルの字幕をSSAに変換するスクリプトです。
+TS 内のAプロファイルの字幕を ASS (Advanced SubStation Alpha) に変換するスクリプトです。
 
 ## 動作環境
 
