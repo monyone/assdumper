@@ -213,8 +213,7 @@ class Dumper:
   def position_changed(self):
     self.lines.append('')
     self.text_format_changed()
-    self.lines[-1] += '{{\\pos({},{})}}'.format(self.pos[0], self.pos[1])
-    self.forground_color_changed()
+    #self.lines[-1] += '{{\\pos({},{})}}'.format(self.pos[0], self.pos[1])
 
   def text_format_changed(self):
     if len(self.lines) == 0: return
@@ -226,6 +225,7 @@ class Dumper:
       params.append('msz')
     elif self.text_size == (0.5, 0.5):
       params.append('ssz')
+      self.lines.append('')
     else:
       raise NotImplementedYetError()
 
@@ -234,6 +234,10 @@ class Dumper:
     #if self.orn: params.append('orn')
 
     self.lines[-1] += '{{\\r{}}}'.format('-'.join(params))
+    if self.text_size == (0.5, 0.5):
+      self.lines[-1] += '{{\\pos({},{})}}'.format(self.pos[0], self.pos[1] + self.kukaku()[1]) # ルビがうまく出ないので対症療法
+    else:
+      self.lines[-1] += '{{\\pos({},{})}}'.format(self.pos[0], self.pos[1])
     self.forground_color_changed()
 
   def forground_color_changed(self):
