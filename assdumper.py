@@ -21,6 +21,7 @@ if __name__ == "__main__":
   parser.add_argument('-i', '--input', type=argparse.FileType('rb'), nargs='?', default=sys.stdin.buffer)
   parser.add_argument('-o', '--output', type=argparse.FileType('w'), nargs='?', default=sys.stdout)
   parser.add_argument('-s', '--SID', type=int, required=True)
+  parser.add_argument('-a', '--accurate', action='store_true')
 
   args = parser.parse_args()
 
@@ -96,7 +97,7 @@ if __name__ == "__main__":
         SUBTITLE = SUBTITLE_Parser.pop()
         if not FIRST_PCR: continue
 
-        dumper = Dumper(SUBTITLE)
+        dumper = Dumper(SUBTITLE, accurate=args.accurate)
         elapsed_seconds = seconds = (((1 << 33) - 1) + (dumper.PTS() - FIRST_PCR)) % ((1 << 33) - 1) / 90000
 
         if not dumper.dump(elapsed_seconds): continue

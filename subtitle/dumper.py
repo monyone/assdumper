@@ -9,7 +9,7 @@ class NotImplementedYetError(Exception):
 
 class Dumper:
 
-  def __init__(self, pes):
+  def __init__(self, pes, accurate):
     self.pes = pes
 
     self.G_TEXT = {
@@ -57,7 +57,8 @@ class Dumper:
     self.swf, self.sdf, self.sdp = (960, 620), (960, 620), (0, 0)
     self.ssm, self.shs, self.svs = (36, 36), 4, 24
     self.text_size = (1, 1)
-    self.pos = None # MEMO: SDF, SDF, SDP が変化している事があるため
+    self.use_pos = None # MEMO: SDF, SDF, SDP が変化している事があるため
+    self.ass_pos = None # MEMO: SDF, SDF, SDP が変化している事があるため
     self.pallet = 0
     self.fg = pallets[self.pallet][7]
     self.orn = False
@@ -66,6 +67,7 @@ class Dumper:
 
     # ass 用
     self.lines = []
+    self.accurate = accurate
     self.start_seconds = None
     self.current_seconds = None
     self.end_seconds = None
@@ -210,10 +212,13 @@ class Dumper:
       body.append('Dialogue: 0,{},{},nsz,,0,0,0,,{}'.format(starttime, endtime, line))
     return '\n'.join(body) + '\n'
 
-  def position_changed(self):
+  def line_changed(self):
     self.lines.append('')
     self.text_format_changed()
-    #self.lines[-1] += '{{\\pos({},{})}}'.format(self.pos[0], self.pos[1])
+    if self.accurate:
+      self.lines[-1] += '{{\\pos({},{})}}'.format(self.use_pos[0], self.use_pos[1])
+    else:
+      self.lines[-1] += '{{\\pos({},{})}}'.format(self.ass_pos[0], self.ass_pos[1])
 
   def text_format_changed(self):
     if len(self.lines) == 0: return
@@ -225,7 +230,6 @@ class Dumper:
       params.append('msz')
     elif self.text_size == (0.5, 0.5):
       params.append('ssz')
-      self.lines.append('')
     else:
       raise NotImplementedYetError()
 
@@ -234,10 +238,6 @@ class Dumper:
     #if self.orn: params.append('orn')
 
     self.lines[-1] += '{{\\r{}}}'.format('-'.join(params))
-    if self.text_size == (0.5, 0.5):
-      self.lines[-1] += '{{\\pos({},{})}}'.format(self.pos[0], self.pos[1] + self.kukaku()[1]) # ルビがうまく出ないので対症療法
-    else:
-      self.lines[-1] += '{{\\pos({},{})}}'.format(self.pos[0], self.pos[1])
     self.forground_color_changed()
 
   def forground_color_changed(self):
@@ -298,43 +298,81 @@ class Dumper:
     height = int((self.svs + self.ssm[1]) * self.text_size[1])
     return (width, height)
   def move_absolute_dot(self, x, y, changed = True):
-    self.pos = (x, y)
-    if changed: self.position_changed()
+    width, height = self.kukaku()
+    new_pos = (x, y)
+    if self.use_pos:
+      move = ((new_pos[0] - self.use_pos[0]) // width, (new_pos[1] - self.use_pos[1]) // height)
+      move_mod = ((new_pos[0] - self.use_pos[0]) % width, (new_pos[1] - self.use_pos[1]) % height)
+      if move_mod[0] == 0 and move_mod[1] == 0:
+        self.move_relative_pos(move[0], move[1])
+      elif move_mod[0] == 0:
+        self.use_pos = (self.use_pos[0], new_pos[1])
+        self.ass_pos = (self.ass_pos[0], new_pos[1])
+        self.move_relative_pos(move[0], 0)
+      elif move_mod[1] == 0:
+        self.use_pos = (new_pos[0], self.use_pos[0])
+        self.ass_pos = (new_pos[0], self.ass_pos[1])
+        self.move_relative_pos(0, move[1])
+      else:
+        self.use_pos = self.ass_pos = new_pos
+        print(move, move_mod)
+    else:
+      self.use_pos = self.ass_pos = new_pos
+    if changed: self.line_changed()
   def move_absolute_pos(self, x, y, changed = True):
     width, height = self.kukaku()
-    self.pos = (self.sdp[0] + x * width, self.sdp[1] + (y + 1) * height)
-    if changed: self.position_changed()
+    new_pos = (self.sdp[0] + x * width, self.sdp[1] + (y + 1) * height)
+    if self.use_pos:
+      move = ((new_pos[0] - self.use_pos[0]) // width, (new_pos[1] - self.use_pos[1]) // height)
+      move_mod = ((new_pos[0] - self.use_pos[0]) % width, (new_pos[1] - self.use_pos[1]) % height)
+      if move_mod[0] == 0 and move_mod[1] == 0:
+        self.move_relative_pos(move[0], move[1])
+      else:
+        self.use_pos = self.ass_pos = new_pos
+    else:
+      self.use_pos = self.ass_pos = new_pos
+    if changed: self.line_changed()
   def move_relative_pos(self, x, y):
-    if not self.pos:
+    if not self.use_pos:
       self.move_absolute_pos(0, 0, False)
 
     width, height = self.kukaku()
     while x < 0:
       x += 1
-      self.pos = (self.pos[0] - width, self.pos[1])
-      if self.pos[0] < self.sdp[0]:
-        self.pos = (self.sdp[0] + self.sdf[0] - width, self.pos[1])
+      self.use_pos = (self.use_pos[0] - width, self.use_pos[1])
+      self.ass_pos = (self.ass_pos[0] - width, self.ass_pos[1])
+      if self.use_pos[0] < self.sdp[0]:
+        self.use_pos = (self.sdp[0] + self.sdf[0] - width, self.use_pos[1])
+        self.ass_pos = (self.sdp[0] + self.sdf[0] - width, self.ass_pos[1])
         y -= 1
     while x > 0:
       x -= 1
-      self.pos = (self.pos[0] + width, self.pos[1])
-      if self.pos[0] >= self.sdp[0] + self.sdf[0]:
-        self.pos = (self.sdp[0], self.pos[1])
+      self.use_pos = (self.use_pos[0] + width, self.use_pos[1])
+      self.ass_pos = (self.ass_pos[0] + width, self.ass_pos[1])
+      if self.use_pos[0] >= self.sdp[0] + self.sdf[0]:
+        self.use_pos = (self.sdp[0], self.use_pos[1])
+        self.ass_pos = (self.sdp[0], self.ass_pos[1])
         y += 1
-    while y < 0:
-      y += 1
-      self.pos = (self.pos[0], self.pos[1] - height)
-    while y > 0:
-      y -= 1
-      self.pos = (self.pos[0], self.pos[1] + height)
+    if y < 0:
+      while y < 0:
+        y += 1
+        self.use_pos = (self.use_pos[0], self.use_pos[1] - height)
+        self.ass_pos = (self.ass_pos[0], self.ass_pos[1] - height // 2)
+      self.line_changed()
+    if y > 0:
+      while y > 0:
+        y -= 1
+        self.use_pos = (self.use_pos[0], self.use_pos[1] + height)
+        self.ass_pos = (self.ass_pos[0], self.ass_pos[1] + height // 2)
+      self.line_changed()
 
-      self.position_changed()
   def move_newline(self):
-    if not self.pos:
+    if not self.use_pos:
       self.move_absolute_pos(0, 0, False)
 
     width, height = self.kukaku()
-    self.pos = (self.sdp[0], self.pos[1] + height)
+    self.use_pos = (self.sdp[0], self.use_pos[1] + height)
+    self.ass_pos = (self.sdp[0], self.ass_pos[1] + height // 2)
 
     self.position_changed()
 
@@ -767,7 +805,7 @@ class Dumper:
         raise NotImplementedYetError(hex(byte))
 
   def render_character(self, ch_byte, dict):
-    if not self.pos: self.move_absolute_pos(0, 0)
+    if not self.use_pos: self.move_absolute_pos(0, 0)
     width, height = self.kukaku()
 
     character_key = int.from_bytes(ch_byte, byteorder='big') & int.from_bytes(b'\x7F' * dict.size, byteorder='big')
@@ -781,8 +819,8 @@ class Dumper:
     elif type(character) == bytearray: # DRCS
       drcs = (int(self.ssm[0] * self.text_size[0]) // 2, int(self.ssm[1] * self.text_size[1]) // 2)
       depth = len(character) * 8 // (drcs[0] * drcs[1])
-      for y in drcs[1]:
-        for x in drcs[0]:
+      for y in range(drcs[1]):
+        for x in range(drcs[0]):
           value = 0
           for d in range(depth):
             byte = (((y * drcs[0] + x) * depth) + d) // 8
@@ -794,3 +832,4 @@ class Dumper:
     else:
       self.lines[-1] += character
 
+    self.move_relative_pos(1, 0)
