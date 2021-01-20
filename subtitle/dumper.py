@@ -300,39 +300,47 @@ class Dumper:
   def move_absolute_dot(self, x, y, changed = True):
     width, height = self.kukaku()
     new_pos = (x, y)
+    print(new_pos)
     if self.use_pos:
       move = ((new_pos[0] - self.use_pos[0]) // width, (new_pos[1] - self.use_pos[1]) // height)
       move_mod = ((new_pos[0] - self.use_pos[0]) % width, (new_pos[1] - self.use_pos[1]) % height)
       if move_mod[0] == 0 and move_mod[1] == 0:
-        self.move_relative_pos(move[0], move[1])
+        self.move_relative_pos(move[0], move[1], False)
       elif move_mod[0] == 0:
         self.use_pos = (self.use_pos[0], new_pos[1])
         self.ass_pos = (self.ass_pos[0], new_pos[1])
-        self.move_relative_pos(move[0], 0)
+        self.move_relative_pos(move[0], 0, False)
       elif move_mod[1] == 0:
         self.use_pos = (new_pos[0], self.use_pos[0])
         self.ass_pos = (new_pos[0], self.ass_pos[1])
-        self.move_relative_pos(0, move[1])
+        self.move_relative_pos(0, move[1], False)
       else:
         self.use_pos = self.ass_pos = new_pos
-        print(move, move_mod)
     else:
       self.use_pos = self.ass_pos = new_pos
     if changed: self.line_changed()
   def move_absolute_pos(self, x, y, changed = True):
     width, height = self.kukaku()
-    new_pos = (self.sdp[0] + x * width, self.sdp[1] + (y + 1) * height)
+    new_pos = (self.sdp[0] + x * width, self.sdp[1] + y * height)
     if self.use_pos:
       move = ((new_pos[0] - self.use_pos[0]) // width, (new_pos[1] - self.use_pos[1]) // height)
       move_mod = ((new_pos[0] - self.use_pos[0]) % width, (new_pos[1] - self.use_pos[1]) % height)
       if move_mod[0] == 0 and move_mod[1] == 0:
-        self.move_relative_pos(move[0], move[1])
+        self.move_relative_pos(move[0], move[1], False)
+      elif move_mod[0] == 0:
+        self.use_pos = (self.use_pos[0], new_pos[1])
+        self.ass_pos = (self.ass_pos[0], new_pos[1])
+        self.move_relative_pos(move[0], 0, False)
+      elif move_mod[1] == 0:
+        self.use_pos = (new_pos[0], self.use_pos[0])
+        self.ass_pos = (new_pos[0], self.ass_pos[1])
+        self.move_relative_pos(0, move[1], False)
       else:
         self.use_pos = self.ass_pos = new_pos
     else:
       self.use_pos = self.ass_pos = new_pos
     if changed: self.line_changed()
-  def move_relative_pos(self, x, y):
+  def move_relative_pos(self, x, y, changed=True):
     if not self.use_pos:
       self.move_absolute_pos(0, 0, False)
 
@@ -354,17 +362,29 @@ class Dumper:
         self.ass_pos = (self.sdp[0], self.ass_pos[1])
         y += 1
     if y < 0:
-      while y < 0:
-        y += 1
-        self.use_pos = (self.use_pos[0], self.use_pos[1] - height)
-        self.ass_pos = (self.ass_pos[0], self.ass_pos[1] - height // 2)
-      self.line_changed()
+      if (height * abs(y)) > (self.ssm[1] + self.svs): # NSZ 1 区画を越えていたら
+        while y < 0:
+          y += 1
+          self.use_pos = (self.use_pos[0], self.use_pos[1] - height)
+          self.ass_pos = (self.ass_pos[0], self.ass_pos[1] - height)
+      else:
+        while y < 0:
+          y += 1
+          self.use_pos = (self.use_pos[0], self.use_pos[1] - height)
+          self.ass_pos = (self.ass_pos[0], self.ass_pos[1] - height // 2)
+      if changed: self.line_changed()
     if y > 0:
-      while y > 0:
-        y -= 1
-        self.use_pos = (self.use_pos[0], self.use_pos[1] + height)
-        self.ass_pos = (self.ass_pos[0], self.ass_pos[1] + height // 2)
-      self.line_changed()
+      if (height * abs(y)) > (self.ssm[1] + self.svs): # NSZ 1 区画を越えていたら
+        while y > 0:
+          y -= 1
+          self.use_pos = (self.use_pos[0], self.use_pos[1] + height)
+          self.ass_pos = (self.ass_pos[0], self.ass_pos[1] + height)
+      else:
+        while y > 0:
+          y -= 1
+          self.use_pos = (self.use_pos[0], self.use_pos[1] + height)
+          self.ass_pos = (self.ass_pos[0], self.ass_pos[1] + height // 2)
+      if changed: self.line_changed()
 
   def move_newline(self):
     if not self.use_pos:
@@ -374,7 +394,7 @@ class Dumper:
     self.use_pos = (self.sdp[0], self.use_pos[1] + height)
     self.ass_pos = (self.sdp[0], self.ass_pos[1] + height // 2)
 
-    self.position_changed()
+    self.line_changed()
 
   def parse_DRCS(self, size, begin, end):
     NumberOfCode = self.pes[begin + 0]
