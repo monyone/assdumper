@@ -321,7 +321,7 @@ class Dumper:
     if changed: self.line_changed()
   def move_absolute_pos(self, x, y, changed = True):
     width, height = self.kukaku()
-    new_pos = (self.sdp[0] + x * width, self.sdp[1] + y * height)
+    new_pos = (self.sdp[0] + x * width, self.sdp[1] + (y + 1) * height)
     if self.use_pos:
       move = ((new_pos[0] - self.use_pos[0]) // width, (new_pos[1] - self.use_pos[1]) // height)
       move_mod = ((new_pos[0] - self.use_pos[0]) % width, (new_pos[1] - self.use_pos[1]) % height)
