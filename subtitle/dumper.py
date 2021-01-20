@@ -318,7 +318,7 @@ class Dumper:
     while x > 0:
       x -= 1
       self.pos = (self.pos[0] + width, self.pos[1])
-      if self.pos[0] + width > self.sdf[0] + self.sdf[0]:
+      if self.pos[0] >= self.sdp[0] + self.sdf[0]:
         self.pos = (self.sdp[0], self.pos[1])
         y += 1
     while y < 0:
@@ -510,7 +510,8 @@ class Dumper:
       elif byte == JIS8.US:
         begin += 1 # (TODO: ignore したことをログに残す)
       elif byte == JIS8.SP:
-        begin += 1 # (TODO: ignore したことをログに残す)
+        self.render_character(b'\xa1\xa1', self.G_TEXT[G_SET.KANJI]) # 全角スペース
+        begin += 1
       elif byte == JIS8.DEL:
         begin += 1 # (TODO: ignore したことをログに残す)
       elif byte == JIS8.BKF:
@@ -778,13 +779,14 @@ class Dumper:
       self.GR = 2
       return
     elif type(character) == bytearray: # DRCS
-      depth = len(character) * 8 // (self.ssm[0] * self.ssm[1])
-      for y in range(self.ssm[1]):
-        for x in range(self.ssm[0]):
+      drcs = (int(self.ssm[0] * self.text_size[0]) // 2, int(self.ssm[1] * self.text_size[1]) // 2)
+      depth = len(character) * 8 // (drcs[0] * drcs[1])
+      for y in drcs[1]:
+        for x in drcs[0]:
           value = 0
           for d in range(depth):
-            byte = (((y * self.ssm[0] + x) * depth) + d) // 8
-            index = 7 - ((((y * self.ssm[0] + x) * depth) + d) % 8)
+            byte = (((y * drcs[0] + x) * depth) + d) // 8
+            index = 7 - ((((y * drcs[0] + x) * depth) + d) % 8)
             value *= 2
             value += (character[byte] & (1 << index)) >> index
           if value != 0:
