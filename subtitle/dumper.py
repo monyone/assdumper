@@ -134,7 +134,7 @@ class Dumper:
     styles.append(
       self.make_style(
         Name='msz',
-        Fontname='WadaLabChuMaruGo2004ARIBHalf',
+        Fontname='WadaLabChuMaruGo2004ARIB',
         Fontsize=36 - 8, # なぜかWadaLabChuMaruGo2004ARIBがデカく描写されるので
         PrimaryColour=forground_color, #固定
         SecondaryColour=forground_color, #固定
