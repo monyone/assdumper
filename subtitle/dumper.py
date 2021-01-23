@@ -495,63 +495,26 @@ class Dumper:
         elif self.pes[begin + 1] == ESC.LS3R: ## LS3R
           self.GR = 3 #GR = G3
           begin += 2
-        elif self.pes[begin + 1] == 0x28: # G0 (1 byte)
-          if self.pes[begin + 2] == 0x20: # DRCS
-            self.G_BACK[0] = self.G_OTHER[self.pes[begin + 3]]
+        elif 0x28 <= self.pes[begin + 1] and self.pes[begin + 1] <= 0x2B: # 1 byte
+          GX = self.pes[begin + 1] - 0x28
+          if self.pes[begin + 2] == 0x20:
+            self.G_BACK[GX] = self.G_OTHER[self.pes[begin + 3]] # DRCS
             begin += 4
           else:
-            self.G_BACK[0] = self.G_TEXT[self.pes[begin + 2]]
-            begin += 3
-        elif self.pes[begin + 1] == 0x29: # G1 (1 byte)
-          if self.pes[begin + 2] == 0x20: # DRCS
-            self.G_BACK[1] = self.G_OTHER[self.pes[begin + 3]]
-            begin += 4
-          else:
-            self.G_BACK[1] = self.G_TEXT[self.pes[begin + 2]]
-            begin += 3
-        elif self.pes[begin + 1] == 0x2A: # G2 (1 byte)
-          if self.pes[begin + 2] == 0x20: # DRCS
-            self.G_BACK[2] = self.G_OTHER[self.pes[begin + 3]]
-            begin += 4
-          else:
-            self.G_BACK[2] = self.G_TEXT[self.pes[begin + 2]]
-            begin += 3
-        elif self.pes[begin + 1] == 0x2B: # G3 (1 byte)
-          if self.pes[begin + 2] == 0x20: # DRCS
-            self.G_BACK[3] = self.G_OTHER[self.pes[begin + 3]]
-            begin += 4
-          else:
-            self.G_BACK[3] = self.G_TEXT[self.pes[begin + 2]]
+            self.G_BACK[GX] = self.G_TEXT[self.pes[begin + 2]] # TEXT
             begin += 3
         elif self.pes[begin + 1] == 0x24: # 2 byte
-          if self.pes[begin + 2] == 0x28: # G0 (2 byte)
-            if self.pes[begin + 3] == 0x20: # DRCS
-              self.G_BACK[0] = self.G_OTHER[self.pes[begin + 4]]
+          if 0x28 <= self.pes[begin + 2] and self.pes[begin + 2] <= 0x2B: # 2 byte
+            GX = self.pes[begin + 2] - 0x28
+            if self.pes[begin + 3] == 0x20:
+              self.G_BACK[GX] = self.G_OTHER[self.pes[begin + 4]] # DRCS
               begin += 5
             else:
-              self.G_BACK[0] = self.G_TEXT[self.pes[begin + 3]]
+              self.G_BACK[GX] = self.G_TEXT[self.pes[begin + 3]] # TEXT
               begin += 4
-          if self.pes[begin + 2] == 0x29: # G1 (2 byte)
-            if self.pes[begin + 3] == 0x20: # DRCS
-              self.G_BACK[0] = self.G_OTHER[self.pes[begin + 4]]
-              begin += 5
-            else:
-              self.G_BACK[0] = self.G_TEXT[self.pes[begin + 3]]
-              begin += 4
-          if self.pes[begin + 2] == 0x2A: # G2 (2 byte)
-            if self.pes[begin + 3] == 0x20: # DRCS
-              self.G_BACK[0] = self.G_OTHER[self.pes[begin + 4]]
-              begin += 5
-            else:
-              self.G_BACK[0] = self.G_TEXT[self.pes[begin + 3]]
-              begin += 4
-          if self.pes[begin + 2] == 0x2B: # G3 (2 byte)
-            if self.pes[begin + 3] == 0x20: # DRCS
-              self.G_BACK[0] = self.G_OTHER[self.pes[begin + 4]]
-              begin += 5
-            else:
-              self.G_BACK[0] = self.G_TEXT[self.pes[begin + 3]]
-              begin += 4
+          else: # G0 (2byte G SET)
+            self.G_BACK[0] = self.G_TEXT[self.pes[begin + 2]]
+            begin += 3
         else:
           raise NotImplementedYetError(JIS8.ESC)
       elif byte == JIS8.APS:
