@@ -54,7 +54,7 @@ class Dumper:
       G_DRCS.MACRO: MACRO()
     }
     # (WARN: 本来は SWF は字幕管理データから取得する)
-    self.swf, self.sdf, self.sdp = (960, 620), (960, 620), (0, 0)
+    self.swf, self.sdf, self.sdp = (960, 540), (960, 540), (0, 0)
     self.ssm, self.shs, self.svs = (36, 36), 4, 24
     self.text_size = (1, 1)
     self.use_pos = None # MEMO: SDF, SDF, SDP が変化している事があるため
