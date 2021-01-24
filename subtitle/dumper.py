@@ -745,8 +745,8 @@ class Dumper:
                 self.orn = None
                 self.text_format_changed()
             elif P1 == 0x31:
-              P2 = (self.pes[begin + 3] & 0x0F) + (self.pes[begin + 4] & 0x0F)
-              P3 = (self.pes[begin + 5] & 0x0F) + (self.pes[begin + 6] & 0x0F)
+              P2 = (self.pes[begin + 3] & 0x0F) * 10 + (self.pes[begin + 4] & 0x0F)
+              P3 = (self.pes[begin + 5] & 0x0F) * 10 + (self.pes[begin + 6] & 0x0F)
               if not self.orn:
                 self.orn = pallets[P2][P3]
                 self.text_format_changed()
