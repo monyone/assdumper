@@ -404,9 +404,9 @@ class Dumper:
       NumberOfFont = self.pes[begin + 2]
       if size == 1:
         # 0x41 - 0x4F までが 1byte DRCS の対応なので、下の 4bit だけ取る
-        index, ch = (CharacterCode & 0x0F00) >> 8, (CharacterCode & 0x00FF) >> 0
+        index, ch = (CharacterCode & 0x0F00) >> 8, ((CharacterCode & 0x00FF) >> 0) & 0x7F
       elif size == 2:
-        ch1, ch2 = (CharacterCode & 0xFF00) >> 8, (CharacterCode & 0x00FF) >> 0
+        ch = Charactercode & 0x7F7F
 
       begin += 3
       for font in range(NumberOfFont):
@@ -422,7 +422,7 @@ class Dumper:
             self.G_OTHER[0x40 + index][ch] = self.pes[begin + 4: begin + 4 + length]
             begin += 4 + length
           elif size == 2:
-            self.G_OTHER[0x40][(ch1, ch2)] = self.pes[begin + 4: begin + 4 + length]
+            self.G_OTHER[0x40][ch] = self.pes[begin + 4: begin + 4 + length]
             begin += 4 + length
           else:
             raise NotImplementedYetError()
