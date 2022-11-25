@@ -300,7 +300,6 @@ class Dumper:
   def move_absolute_dot(self, x, y, changed = True):
     width, height = self.kukaku()
     new_pos = (x, y)
-    print(new_pos)
     if self.use_pos:
       move = ((new_pos[0] - self.use_pos[0]) // width, (new_pos[1] - self.use_pos[1]) // height)
       move_mod = ((new_pos[0] - self.use_pos[0]) % width, (new_pos[1] - self.use_pos[1]) % height)
